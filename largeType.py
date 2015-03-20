@@ -22,7 +22,7 @@ def main(argv):
 	text = font.render(word, 1, (255, 255, 255))
 	textPosition= text.get_rect()
 	textPosition.centerx = background.get_rect().centerx
-	textPosition.centery = background.get_rect().centery
+	textPosition.centery = background.get_rect().centery 
 	background.blit(text, textPosition)
 
 	screen.blit(background, (0,0))
@@ -30,7 +30,14 @@ def main(argv):
 
 	while 1:
 		for event in pygame.event.get():
+			if event.type == pygame.KEYDOWN:
+				if event.key == pygame.K_ESCAPE:
+					print 'am intrat pe else'
+					pygame.quit()
+					sys.exit()
+					return
 			if event.type == QUIT:
+				print 'cccc'
 				return
 
 		screen.blit(background, (0, 0))

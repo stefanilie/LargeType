@@ -6,10 +6,11 @@ Simple python script that mimics Alfred's large type feature.
 Features to add 
 ----------------
 
-* Make window size of screen's
-* Black background
-* White text 
+* ~~Make window size of screen's~~
+* ~~Black background~~
+* ~~White text~~ 
 * Dynamicaly center text
+* Code refactor with methods
 * Sticky key
 * Input window triggered by sicky key 
 * Settings

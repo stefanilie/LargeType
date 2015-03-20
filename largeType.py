@@ -10,15 +10,16 @@ def main(argv):
 
 	word=str(sys.argv[1])
 
-	screen = pygame.display.set_mode((640, 480))
+	infoObject = pygame.display.Info()
+	screen = pygame.display.set_mode((infoObject.current_w, infoObject.current_h))
 	font = pygame.font.Font(None, 150)
 	pygame.display.set_caption('LargeType')
 
 	background = pygame.Surface(screen.get_size())
 	background = background.convert()
-	background.fill((250, 250, 250))
+	background.fill((0, 0, 0))
 
-	text = font.render(word, 1, (10, 10, 10))
+	text = font.render(word, 1, (255, 255, 255))
 	textPosition= text.get_rect()
 	textPosition.centerx = background.get_rect().centerx
 	textPosition.centery = background.get_rect().centery

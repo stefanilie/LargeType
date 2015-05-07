@@ -1,85 +1,152 @@
-#ToDo: add validation for sapce character
-
 import pygame
 import sys
 from pygame.locals import *
+import math
 
-pygame.init()
 
-def setup_display(strWord):
-	fontSize=1
-	screen_resolution = pygame.display.Info()
-	screen = pygame.display.set_mode((screen_resolution.current_w, screen_resolution.current_h))
-	font = pygame.font.Font(None, fontSize)
-	pygame.display.set_caption('LargeType')
-	arrToReturn={
-		'screen': screen,
-		'font': font,
-		'word': strWord,
-		'resolution': screen_resolution
-	}
-	return arrToReturn
+class TextRectException:
+    def __init__(self, message = None):
+        self.message = message
+    def __str__(self):
+        return self.message
 
-def setup_background(screen):
-	background = pygame.Surface(screen.get_size())
-	background = background.convert()
-	background.fill((0, 0, 0))
-	return background
 
-def render_text(stuff):
-	text = stuff['font'].render(stuff['word'], 1, (255, 255, 255))
-	fontSize = 1
-	#streching the text as far as it can 
-	while text.get_width()<stuff['resolution'].current_w-80 and text.get_height()<stuff['resolution'].current_h:
-		fontSize+=5
-		stuff['font'] = pygame.font.Font(None, fontSize)
-		text = stuff['font'].render(stuff['word'], 1, (255, 255, 255))
-	print fontSize
-	stuff['text'] = text
-	return stuff
+class LargeType(object):
+    def __init__(self, word):
+        pygame.init()
+        self.font_size = 1
+        self.resolution = pygame.display.Info()
+        self.screen = pygame.display.set_mode((self.resolution.current_w, self.resolution.current_h))
+        self.font = pygame.font.Font(None, self.font_size)
+        pygame.display.set_caption('LargeType')
 
-def paint(stuff):
-	textPosition= stuff['text'].get_rect()
-	textPosition.centerx = stuff['background'].get_rect().centerx
-	textPosition.centery = stuff['background'].get_rect().centery 
-	stuff['background'].blit(stuff['text'], textPosition)
+        self.background = pygame.Surface(self.screen.get_size())
+        self.background = self.background.convert()
+        self.background.fill((0, 0, 0))
 
-	stuff['screen'].blit(stuff['background'], (0,0))
-	pygame.display.flip()
-	return stuff
+        self.word = word
 
-def main(argv):
-	if(len(sys.argv) != 2):
-		sys.exit('Usage: largeType.py <string>')
+    def render_text_small(self):
+        text = self.font.render(self.word, 1, (255, 255, 255))
+        self.font_size = 1
+        #streching the text as far as it can 
+        while text.get_width() < self.resolution.current_w-80 and text.get_height() < self.resolution.current_h:
+            self.font_size += 5
+            self.font = pygame.font.Font(None, self.font_size)
+            text = self.font.render(self.word, 1, (255, 255, 255))
+        
+        self.text = text
 
-	word=str(sys.argv[1])
+    def paint(self):
+        textPosition= self.text.get_rect()
+        textPosition.centerx = self.background.get_rect().centerx
+        textPosition.centery = self.background.get_rect().centery
+        self.background.blit(self.text, textPosition)
 
-	#getting display size and setting up font
-	stuff = setup_display(word)
+        self.screen.blit(self.background, (0,0))
+        pygame.display.flip()
 
-	#setting up background 
-	stuff['background']=setup_background(stuff['screen'])
+    def render_text(self, justification=1):
+        text = self.font.render(self.word, 1, (255, 255, 255))
+        fontSize = 2
+        # calculate font size proportionaly by width and height of the screen
+        text_width = text.get_width()
+        screen_width = self.resolution.current_w
 
-	stuff = render_text(stuff)
-	stuff = paint(stuff)
-	
+        if text_width <= 100:
+            self.font_size = pygame.font.Font(None, fontSize)
+            while self.font.size(self.word)[0] <= self.resolution.current_w - 20:
+                fontSize += 1
+                self.font = pygame.font.Font(None, fontSize)
 
-	#this below is for spliting into two parts if expression is larger than screen_w
-	#firstpart, secondpart = string[:len(string)/2], string[len(string)/2:]
+        else:
+            fontSize = (self.resolution.current_w / text_width * 5) * fontSize + 5
+            screen_width -= (3.0 / 100) * self.resolution.current_w
+            
+        self.font = pygame.font.Font(None, fontSize)
+        text = self.font.render(self.word, 1, (255, 255, 255))
+        self.text = text
 
-#	if fontSize<60:	
-	while 1:
-		for event in pygame.event.get():
-			if event.type == pygame.KEYDOWN:
-				if event.key == pygame.K_ESCAPE:
-					pygame.quit()
-					sys.exit()
-					return
-			if event.type == QUIT:
-				return
+        final_lines = []
+        requested_lines = self.word.splitlines()
 
-		stuff['screen'].blit(stuff['background'], (0, 0))
-		pygame.display.flip()
+        font = pygame.font.Font(None, fontSize)
 
-if __name__ == "__main__":
-	main(sys.argv[1:])
+        for requested_line in requested_lines:
+            if self.font.size(requested_line)[0] > screen_width:
+                words = requested_line.split(' ')
+                # if any of our words are too long to fit, return.
+                for word in words:
+                    if font.size(word)[0] >= screen_width:
+                        raise TextRectException, "The word " + word + " is too long to fit in the rect passed."
+                # Start a new line
+                accumulated_line = ""
+                for word in words:
+                    test_line = accumulated_line + word + " "
+                    # Build the line while the words fit.    
+                    if self.font.size(test_line)[0] < screen_width:
+                        accumulated_line = test_line
+                    else:
+                        final_lines.append(accumulated_line)
+                        accumulated_line = word + " "
+                final_lines.append(accumulated_line)
+            else:
+                final_lines.append(requested_line)
+
+        rect = Rect(0, 0, screen_width, self.resolution.current_h)
+
+        surface = pygame.Surface(rect.size)
+
+        accumulated_height = 0
+        text_color = (255, 255, 255)
+        for line in final_lines:
+            if accumulated_height + self.font.size(line)[1] >= rect.height:
+                raise TextRectException, "Once word-wrapped, the text string was too tall to fit in the rect."
+            if line != "":
+                tempsurface = self.font.render(line, 1, (255, 255, 255))
+                if justification == 0:
+                    surface.blit(tempsurface, (0, accumulated_height))
+                elif justification == 1:
+                    surface.blit(tempsurface, ((rect.width - tempsurface.get_width()) / 2, accumulated_height))
+                elif justification == 2:
+                    surface.blit(tempsurface, (rect.width - tempsurface.get_width(), accumulated_height))
+                else:
+                    raise TextRectException, "Invalid justification argument: " + str(justification)
+            accumulated_height += font.size(line)[1]
+
+        return surface
+
+
+
+
+if __name__ == '__main__':
+    if(len(sys.argv) != 2):
+        sys.exit('Usage: largeType.py <string>')
+
+    word=str(sys.argv[1])
+    typer = LargeType(word)
+
+    if len(word) < 10:
+        typer.render_text_small()
+        typer.paint()
+        typer.screen.blit(typer.background, (0, 0))
+        pygame.display.flip()
+    else:
+        renderd_text = typer.render_text()
+        my_rect = Rect(0, 0, typer.resolution.current_w, typer.resolution.current_h)
+        x = my_rect.width
+        y = my_rect.height
+        if len(word) < 30:
+            x = int(math.ceil(1./100 * x))
+        else:
+            x = int(math.ceil(3./100 * x))
+
+        y = int(math.ceil(20./100 * y))
+        if renderd_text:
+           typer.screen.blit(renderd_text, (x, y))
+
+        pygame.display.update()
+
+
+    while not pygame.event.wait().type in (QUIT, KEYDOWN):
+        pass

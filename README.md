@@ -10,7 +10,7 @@ Features to add
 * ~~Black background~~
 * ~~White text~~ 
 * ~~Dynamicaly center text~~
-* Split into 2 or more if larger text, and print on tow rows
+* ~~Split into 2 or more if larger text, and print on tow rows~~
 * ~~Code refactor with methods~~
 * Sticky key
 * Input window triggered by sicky key 
